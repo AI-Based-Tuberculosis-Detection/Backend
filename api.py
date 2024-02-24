@@ -5,7 +5,7 @@ import os
 import shutil
 from ultralytics import YOLO
 import uvicorn
-
+i=0
 app = FastAPI()
 
 # Enable CORS
@@ -23,16 +23,27 @@ app.add_middleware(
 MODEL_PATH = 'best.pt'
 model = YOLO(MODEL_PATH)
 
+def get_new_filename(output_dir, filename):
+    new_filename = filename
+    i = 1
+    while os.path.exists(os.path.join(output_dir, new_filename)):
+        name, ext = os.path.splitext(filename)
+        new_filename = f"{name}({i}){ext}"
+        i += 1
+    return new_filename
+
 def process_image(file_path):
     results_list = model.predict(file_path, save=True, imgsz=512, conf=0.25)
     results = results_list[0]
     os.remove(file_path)
     output_dir = results.save_dir
+    # print(results)
     filename = os.path.basename(file_path)
     extracted_folder = os.path.basename(output_dir)
-    shutil.move(output_dir+'\\'+filename, 'C:/Users/vikas/mig/fastapi/output/')
-    output_image = 'C:/Users/vikas/mig/fastapi/output/' + filename
-
+    new_filename = get_new_filename('C:/Users/vikas/mig/fastapi/output/', filename)
+    shutil.move(output_dir + '\\' + filename, os.path.join('C:/Users/vikas/mig/fastapi/output/', new_filename))
+    output_image = 'C:/Users/vikas/mig/fastapi/output/' + new_filename
+        
     return output_image
 
 @app.get("/")
